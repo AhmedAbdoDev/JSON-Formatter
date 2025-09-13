@@ -5,14 +5,17 @@ import SyntaxHighlighter from "react-syntax-highlighter";
 import { a11yDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import JSONInput from "react-json-editor-ajrm";
 import locale from "react-json-editor-ajrm/locale/en";
+import CodeView from "@/components/CodeView";
+import TreeView from "@/components/TreeView";
+import TableView from "@/components/TableView";
 
 export default function Home() {
   const [jsonInput, setJsonInput] = useState("");
   const [formattedData, setFormattedData] = useState(null);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
-  const [viewMode, setViewMode] = useState("format"); // 'format', 'minify', 'tree', 'table'
-
+  const [viewMode, setViewMode] = useState(""); // 'format', 'minify', 'tree', 'table'
+  const buttons = ["format", "minify", "tree", "table"];
   const handleInputChange = (event) => {
     setJsonInput(event.target.value);
     setCopied(false);
@@ -63,7 +66,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-200 flex flex-col items-center p-4 sm:p-8">
+    <div className="bg-gray-900 text-gray-200 flex flex-col items-center p-4 sm:p-8 flex-grow">
       <h1 className="text-3xl sm:text-4xl font-bold mb-6 text-center">
         JSON Formatter & Beautifier
       </h1>
@@ -92,7 +95,7 @@ export default function Home() {
             <button
               onClick={copyToClipboard}
               disabled={!formattedData}
-              className={`py-2 px-4 rounded-lg text-sm font-semibold transition-all duration-200 ${
+              className={`cursor-pointer py-2 px-4 rounded-lg text-sm font-semibold transition-all duration-200 ${
                 formattedData
                   ? "bg-blue-600 hover:bg-blue-700 text-white"
                   : "bg-gray-700 text-gray-400 cursor-not-allowed"
@@ -109,93 +112,10 @@ export default function Home() {
             ) : formattedData ? (
               <>
                 {(viewMode === "format" || viewMode === "minify") && (
-                  <SyntaxHighlighter
-                    language="json"
-                    style={a11yDark}
-                    customStyle={{
-                      padding: "1rem",
-                      backgroundColor: "transparent",
-                      margin: "0",
-                      height: "100%",
-                    }}
-                    showLineNumbers={true}
-                  >
-                    {viewMode === "format"
-                      ? JSON.stringify(formattedData, null, 2)
-                      : JSON.stringify(formattedData)}
-                  </SyntaxHighlighter>
+                  <CodeView data={formattedData} viewMode={viewMode} />
                 )}
-                {viewMode === "tree" && (
-                  <div className="p-4 h-full overflow-auto">
-                    <JSONInput
-                      id="json-tree-view"
-                      locale={locale}
-                      placeholder={formattedData}
-                      theme="dark_vscode_tribute"
-                      viewOnly={true}
-                      style={{
-                        outerBox: {
-                          backgroundColor: "transparent",
-                          border: "none",
-                        },
-                        container: {
-                          backgroundColor: "transparent",
-                          border: "none",
-                        },
-                        body: {
-                          backgroundColor: "transparent",
-                        },
-                      }}
-                    />
-                  </div>
-                )}
-                {viewMode === "table" && (
-                  <div className="p-4 text-sm overflow-x-auto">
-                    {Array.isArray(formattedData) &&
-                    formattedData.every(
-                      (item) => typeof item === "object" && !Array.isArray(item)
-                    ) ? (
-                      <table className="min-w-full table-auto">
-                        <thead className="border-b border-gray-700">
-                          <tr>
-                            {Object.keys(formattedData[0] || {}).map((key) => (
-                              <th
-                                key={key}
-                                className="px-4 py-2 text-left font-medium text-gray-400"
-                              >
-                                {key}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {formattedData.map((item, index) => (
-                            <tr
-                              key={index}
-                              className="border-b border-gray-800 hover:bg-gray-700 transition-colors duration-200"
-                            >
-                              {Object.values(item).map((value, idx) => (
-                                <td
-                                  key={idx}
-                                  className="px-4 py-2 whitespace-nowrap text-gray-300"
-                                >
-                                  {typeof value === "object"
-                                    ? JSON.stringify(value)
-                                    : String(value)}
-                                </td>
-                              ))}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    ) : (
-                      <div className="text-red-400">
-                        Cannot display data as a table. Input must be an array
-                        of objects.
-                      </div>
-                    )}
-                  </div>
-                )}
+                {viewMode === "tree" && <TreeView data={formattedData} />}
+                {viewMode === "table" && <TableView data={formattedData} />}
               </>
             ) : (
               <div className="absolute inset-0 flex items-center justify-center text-gray-500 font-mono p-4 text-center">
@@ -205,48 +125,20 @@ export default function Home() {
           </div>
         </div>
       </div>
-
       <div className="flex flex-col sm:flex-row gap-4 mt-8">
-        <button
-          onClick={() => handleProcess("format")}
-          className={`py-3 px-6 sm:px-12 font-bold rounded-lg shadow-lg transition-colors duration-200 focus:outline-none focus:ring-2 ${
-            viewMode === "format"
-              ? "bg-green-600"
-              : "bg-gray-600 hover:bg-gray-700"
-          }`}
-        >
-          Format
-        </button>
-        <button
-          onClick={() => handleProcess("minify")}
-          className={`py-3 px-6 sm:px-12 font-bold rounded-lg shadow-lg transition-colors duration-200 focus:outline-none focus:ring-2 ${
-            viewMode === "minify"
-              ? "bg-green-600"
-              : "bg-gray-600 hover:bg-gray-700"
-          }`}
-        >
-          Minify
-        </button>{" "}
-        <button
-          onClick={() => handleProcess("tree")}
-          className={`py-3 px-6 sm:px-12 font-bold rounded-lg shadow-lg transition-colors duration-200 focus:outline-none focus:ring-2 ${
-            viewMode === "tree"
-              ? "bg-green-600"
-              : "bg-gray-600 hover:bg-gray-700"
-          }`}
-        >
-          Tree View
-        </button>
-        <button
-          onClick={() => handleProcess("table")}
-          className={`py-3 px-6 sm:px-12 font-bold rounded-lg shadow-lg transition-colors duration-200 focus:outline-none focus:ring-2 ${
-            viewMode === "table"
-              ? "bg-green-600"
-              : "bg-gray-600 hover:bg-gray-700"
-          }`}
-        >
-          Table View
-        </button>
+        {buttons.map((value, index) => (
+          <button
+            key={index}
+            onClick={() => handleProcess(value)}
+            className={`cursor-pointer py-3 px-6 sm:px-12 font-bold rounded-lg shadow-lg transition-colors duration-200 focus:outline-none focus:ring-2 ${
+              viewMode === value
+                ? "bg-green-600"
+                : "bg-gray-600 hover:bg-gray-700"
+            }`}
+          >
+            {value} {["tree", "table"].includes(value) && "View"}
+          </button>
+        ))}
       </div>
     </div>
   );
